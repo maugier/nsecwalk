@@ -1,23 +1,15 @@
 use clap::Parser;
 use trust_dns_resolver::{
     Resolver,
-    config::{ResolverConfig,ResolverOpts},
-    error::{ResolveError, ResolveErrorKind}, Name, IntoName,
+    config::{ResolverConfig,ResolverOpts}, Name, IntoName,
 };
 use trust_dns_proto::{rr::RecordType::NSEC, error::ProtoError};
-use std::{error::Error};
+use std::{error::Error, process::ExitCode};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about=None)]
 struct Args {
     domain: String
-}
-
-fn no_records_found(e: &ResolveError) -> bool {
-    match e.kind() {
-        ResolveErrorKind::NoRecordsFound{..} => true,
-        _                                    => false,
-    }
 }
 
 struct NSECWalker<'r> {
@@ -55,7 +47,7 @@ impl <'r> Iterator for NSECWalker<'r> {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<ExitCode, Box<dyn Error>> {
 
     let args = Args::parse();
     let domain = args.domain;
@@ -63,18 +55,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let resolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default())?;
     let walker = NSECWalker::new(&resolver, &domain)?;
 
+    let mut exit = ExitCode::FAILURE;
+
     for name in walker {
-        eprintln!("Found {name}");
+        exit = ExitCode::SUCCESS;
+        println!("{name}");
     }
-
-    /* 
-    loop {
-
-        todo!();
-
-    }
-    */
     
-    Ok(())
+    Ok(exit)
     
 }

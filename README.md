@@ -8,3 +8,21 @@ Unfortunately, this discloses the next name in the domain, allowing an attacker 
 a zone. This is what this program does.
 
 Zones should use the newer NSEC3 record type for proof of non-existence. NSEC3 hides the names behind a hash. 
+
+## Installing
+
+```bash
+$ git clone https://github.com/maugier/nsecwalk
+$ cargo install --path nsecwalk
+```
+
+## Using
+
+```bash
+$ nsecwalk example.com
+www.example.com.
+
+$ nsecwalk google.com
+No NSEC records found for google.com
+```
+

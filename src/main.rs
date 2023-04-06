@@ -55,13 +55,18 @@ fn main() -> Result<ExitCode, Box<dyn Error>> {
     let resolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default())?;
     let walker = NSECWalker::new(&resolver, &domain)?;
 
-    let mut exit = ExitCode::FAILURE;
+    let mut found = false;
 
     for name in walker {
-        exit = ExitCode::SUCCESS;
+        found = true;
         println!("{name}");
     }
     
-    Ok(exit)
+    if found {
+        Ok(ExitCode::SUCCESS)
+    } else {
+        eprintln!("No NSEC records found for {domain}");
+        Ok(ExitCode::FAILURE)
+    }
     
 }

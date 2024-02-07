@@ -14,6 +14,8 @@ struct Args {
     #[arg(short, long)]
     udp: bool,
     domain: String,
+    #[arg(short, long)]
+    resume: Option<String>
 }
 
 struct NSECWalker<'r> {
@@ -30,9 +32,12 @@ enum NSecError {
 }
 
 impl <'r> NSECWalker<'r> {
-    fn new(resolver: &'r Resolver, domain: &str) -> Result<Self,ProtoError> {
+    fn new(resolver: &'r Resolver, domain: &str, resume: Option<&str>) -> Result<Self,ProtoError> {
         let domain = domain.into_name()?;
-        Ok(Self { resolver, current: domain.clone(), domain })
+        let current = resume.map(|d| d.into_name())
+            .transpose()?
+            .unwrap_or_else(|| domain.clone());
+        Ok(Self { resolver, current, domain })
     }
 
     fn next_lookup(&mut self) -> Result<Option<Name>, NSecError> {
@@ -70,6 +75,7 @@ fn main() -> Result<ExitCode, Box<dyn Error>> {
 
     let args = Args::parse();
     let domain = args.domain;
+    let resume = args.resume.as_ref().map(String::as_str);
 
     let config = match args.nameserver {
         
@@ -88,7 +94,7 @@ fn main() -> Result<ExitCode, Box<dyn Error>> {
 
     let resolver = Resolver::new(config, opts)?;
 
-    let walker = NSECWalker::new(&resolver, &domain)?;
+    let walker = NSECWalker::new(&resolver, &domain, resume)?;
 
     let mut found = false;
 

@@ -71,15 +71,22 @@ fn main() -> Result<ExitCode, Box<dyn Error>> {
     let args = Args::parse();
     let domain = args.domain;
 
-    let mut config = ResolverConfig::default();
-
-    if let Some(ns) = args.nameserver {
-        let addr: SocketAddr = ns.parse()?;
-        let proto = if args.udp { Protocol::Udp } else {Protocol::Tcp };
-        config.add_name_server(NameServerConfig::new(addr, proto));
+    let config = match args.nameserver {
+        
+        Some(ns) => {
+            let addr: SocketAddr = ns.parse()?;
+            let proto = if args.udp { Protocol::Udp } else {Protocol::Tcp };
+            let mut config = ResolverConfig::new();
+            config.add_name_server(NameServerConfig::new(addr, proto));
+            config
+        },
+        None => ResolverConfig::default(),
     };
 
-    let resolver = Resolver::new(config, ResolverOpts::default())?;
+    let mut opts = ResolverOpts::default();
+    opts.recursion_desired = false;
+
+    let resolver = Resolver::new(config, opts)?;
 
     let walker = NSECWalker::new(&resolver, &domain)?;
 
